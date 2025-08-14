@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepRacer Reward Function Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 16px; height: 16px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+<div class="container mx-auto p-4 md:p-8">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold">DeepRacer Reward Function Visualizer</h1>
+        <p class="text-gray-600 mt-2">Testen Sie Ihre Reward-Funktion interaktiv.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Steuerung -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg space-y-6">
+
+            <!-- Car Parameters -->
+            <div>
+                <h2 class="text-xl font-semibold mb-3 border-b pb-2">Car Parameters</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label>Car X Position: <span id="car-x-value">150</span></label>
+                        <input type="range" id="car-x" min="0" max="1000" value="150" class="w-full slider-thumb">
+                    </div>
+                    <div>
+                        <label>Car Y Position: <span id="car-y-value">150</span></label>
+                        <input type="range" id="car-y" min="0" max="1000" value="150" class="w-full slider-thumb">
+                    </div>
+                    <div>
+                        <label>Heading: <span id="heading-value">45°</span></label>
+                        <input type="range" id="heading" min="-180" max="180" value="45" class="w-full slider-thumb">
+                    </div>
+                    <div>
+                        <label>Speed: <span id="speed-value">5.0</span></label>
+                        <input type="range" id="speed" min="0" max="10" step="0.1" value="5" class="w-full slider-thumb">
+                    </div>
+                    <div>
+                        <label class="inline-flex items-center mt-3">
+                            <input type="checkbox" id="look-at-mouse" class="form-checkbox h-5 w-5 text-indigo-600">
+                            <span class="ml-2">Auto schaut immer zur Maus</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Auswahl -->
+            <div>
+                <label for="model-select" class="block text-sm font-medium text-gray-700">Reward Function wählen:</label>
+                <select id="model-select" class="mt-1 block w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500"></select>
+            </div>
+
+            <!-- Reward -->
+            <div class="bg-indigo-50 p-6 rounded-xl text-center">
+                <h2 class="text-lg font-semibold text-indigo-800">Calculated Reward</h2>
+                <p id="reward-value" class="text-4xl font-bold text-indigo-600 mt-2">0.0000</p>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="lg:col-span-2 bg-white p-4 rounded-2xl shadow-lg flex items-center justify-center">
+            <canvas id="track-canvas" class="w-full h-full rounded-lg"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('track-canvas');
+const ctx = canvas.getContext('2d');
+
+const carXSlider = document.getElementById('car-x');
+const carYSlider = document.getElementById('car-y');
+const headingSlider = document.getElementById('heading');
+const speedSlider = document.getElementById('speed');
+const carXValue = document.getElementById('car-x-value');
+const carYValue = document.getElementById('car-y-value');
+const headingValue = document.getElementById('heading-value');
+const speedValue = document.getElementById('speed-value');
+const rewardValue = document.getElementById('reward-value');
+const lookAtMouseCheckbox = document.getElementById('look-at-mouse');
+const modelSelect = document.getElementById('model-select');
+
+let state = {
+    car: { x: 150, y: 150, heading: 45, speed: 5 },
+    waypoints: [
+        [100, 200], [200, 100], [400, 100], [500, 200],
+        [600, 200], [800, 300], [800, 500], [600, 600],
+        [400, 600], [200, 500], [100, 400]
+    ],
+    closestWaypoints: [0, 1]
+};
+
+let draggingCar = false;
+let lookAtMouse = false;
+let mousePos = { x: 0, y: 0 };
+let currentModel = "";
+
+// --- Hilfsfunktionen ---
+function dist2d(a, b) {
+    return Math.hypot(a[0] - b[0], a[1] - b[1]);
+}
+
+function updateClosestWaypoints() {
+    const distances = state.waypoints.map((wp, idx) => ({ idx, dist: dist2d([state.car.x, state.car.y], wp) }));
+    distances.sort((a, b) => a.dist - b.dist);
+    const first = distances[0].idx;
+    const second = distances[1].idx;
+    state.closestWaypoints = first < second ? [first, second] : [second, first];
+}
+
+// --- Model Auswahl laden ---
+function loadModels() {
+    fetch('/models')
+        .then(res => res.json())
+        .then(models => {
+            modelSelect.innerHTML = "";
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                modelSelect.appendChild(opt);
+            });
+            currentModel = models[0] || "";
+            fetchReward();
+        });
+}
+
+modelSelect.addEventListener('change', e => {
+    currentModel = e.target.value;
+    fetchReward();
+});
+
+// --- Reward vom Server holen ---
+function fetchReward() {
+    updateClosestWaypoints();
+    fetch('/reward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: currentModel,
+            params: {
+                x: state.car.x,
+                y: state.car.y,
+                heading: state.car.heading,
+                speed: state.car.speed,
+                waypoints: state.waypoints,
+                closest_waypoints: state.closestWaypoints
+            }
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.reward !== undefined) {
+            rewardValue.textContent = data.reward.toFixed(4);
+        } else {
+            rewardValue.textContent = "ERR";
+            console.error(data.error);
+        }
+    });
+}
+
+// --- Zeichnen ---
+function draw() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Track
+    ctx.beginPath();
+    ctx.moveTo(state.waypoints[0][0], state.waypoints[0][1]);
+    state.waypoints.forEach(([x, y]) => ctx.lineTo(x, y));
+    ctx.closePath();
+    ctx.strokeStyle = '#9ca3af';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Waypoints
+    state.waypoints.forEach((wp, idx) => {
+        ctx.beginPath();
+        ctx.arc(wp[0], wp[1], 8, 0, 2 * Math.PI);
+        ctx.fillStyle = state.closestWaypoints.includes(idx) ? '#6366f1' : '#6b7280';
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 10px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(idx, wp[0], wp[1]);
+    });
+
+    // Car
+    ctx.save();
+    ctx.translate(state.car.x, state.car.y);
+    ctx.rotate(state.car.heading * Math.PI / 180);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-15, -10, 30, 20);
+    ctx.fillStyle = '#f87171';
+    ctx.fillRect(-10, -8, 20, 16);
+    ctx.beginPath();
+    ctx.moveTo(15, 0);
+    ctx.lineTo(35, 0);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+}
+
+function updateUI() {
+    carXValue.textContent = state.car.x;
+    carYValue.textContent = state.car.y;
+    headingValue.textContent = `${Math.round(state.car.heading)}°`;
+    speedValue.textContent = state.car.speed.toFixed(1);
+    fetchReward();
+}
+
+function render() {
+    draw();
+    updateUI();
+}
+
+function screenToCanvas(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+// --- Events ---
+carXSlider.addEventListener('input', e => { state.car.x = +e.target.value; render(); });
+carYSlider.addEventListener('input', e => { state.car.y = +e.target.value; render(); });
+headingSlider.addEventListener('input', e => { state.car.heading = +e.target.value; render(); });
+speedSlider.addEventListener('input', e => { state.car.speed = +e.target.value; render(); });
+
+lookAtMouseCheckbox.addEventListener('change', e => { lookAtMouse = e.target.checked; });
+
+canvas.addEventListener('mousedown', e => {
+    const pos = screenToCanvas(e);
+    const dx = pos.x - state.car.x;
+    const dy = pos.y - state.car.y;
+    if (Math.sqrt(dx*dx + dy*dy) < 20) {
+        draggingCar = true;
+    }
+});
+canvas.addEventListener('mousemove', e => {
+    mousePos = screenToCanvas(e);
+    if (draggingCar) {
+        state.car.x = mousePos.x;
+        state.car.y = mousePos.y;
+        render();
+    }
+});
+canvas.addEventListener('mouseup', () => draggingCar = false);
+canvas.addEventListener('mouseleave', () => draggingCar = false);
+
+function animate() {
+    if (lookAtMouse) {
+        const dx = mousePos.x - state.car.x;
+        const dy = mousePos.y - state.car.y;
+        state.car.heading = Math.atan2(dy, dx) * (180 / Math.PI);
+        render();
+    }
+    requestAnimationFrame(animate);
+}
+
+// Init
+window.addEventListener('resize', render);
+loadModels();
+render();
+animate();
+</script>
+</body>
+</html>

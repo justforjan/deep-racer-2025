@@ -29,7 +29,4 @@ def reward_function(params):
    # distance_penalty = math.exp(-distance_to_perfect_line * 10)  # 0..1
    reward *= distance_to_perfect_line * 10
 
-   return reward
-
-
    return float(reward)

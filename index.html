@@ -56,6 +56,9 @@
                         <input type="range" id="speed" min="0" max="10" step="0.1" value="5" class="w-full slider-thumb">
                     </div>
                     <div>
+                        <label>Waypoints: <span id="closest_waypoints"></span></label>
+                    </div>
+                    <div>
                         <label class="inline-flex items-center mt-3">
                             <input type="checkbox" id="look-at-mouse" class="form-checkbox h-5 w-5 text-indigo-600">
                             <span class="ml-2">Auto schaut immer zur Maus</span>
@@ -94,6 +97,7 @@ const headingSlider = document.getElementById('heading');
 const speedSlider = document.getElementById('speed');
 const carXValue = document.getElementById('car-x-value');
 const carYValue = document.getElementById('car-y-value');
+const closestWaypoints = document.getElementById('closest_waypoints')
 const headingValue = document.getElementById('heading-value');
 const speedValue = document.getElementById('speed-value');
 const rewardValue = document.getElementById('reward-value');
@@ -190,7 +194,96 @@ let state = {
         [3.5817264318466187, 1.472470998764038],
         [3.408314959676616, 1.4717702850315393]
     ],
-    closestWaypoints: [0, 1]
+    perfect_line: [
+        [ 3.02139987e+00,  1.45869374e+00],
+       [ 2.79611184e+00,  1.47645259e+00],
+       [ 2.55766258e+00,  1.48780603e+00],
+       [ 2.29900224e+00,  1.49458953e+00],
+       [ 2.02424354e+00,  1.49874595e+00],
+       [ 1.74275391e+00,  1.50110821e+00],
+       [ 1.45725946e+00,  1.50199393e+00],
+       [ 1.16886336e+00,  1.50162237e+00],
+       [ 8.78304133e-01,  1.50021371e+00],
+       [ 5.86069246e-01,  1.49794748e+00],
+       [ 2.92466572e-01,  1.49494849e+00],
+       [-2.22807462e-03,  1.49134398e+00],
+       [-3.05033588e-01,  1.48822038e+00],
+       [-6.07850904e-01,  1.48569301e+00],
+       [-9.10677172e-01,  1.48382932e+00],
+       [-1.21350835e+00,  1.48270283e+00],
+       [-1.51633800e+00,  1.48247677e+00],
+       [-1.81915338e+00,  1.48333176e+00],
+       [-2.12192930e+00,  1.48550648e+00],
+       [-2.42461912e+00,  1.48924952e+00],
+       [-2.72713106e+00,  1.49487593e+00],
+       [-3.02929272e+00,  1.50276164e+00],
+       [-3.31666816e+00,  1.50306270e+00],
+       [-3.58971910e+00,  1.48796349e+00],
+       [-3.84740433e+00,  1.45128247e+00],
+       [-4.08736552e+00,  1.38697438e+00],
+       [-4.30556573e+00,  1.28907047e+00],
+       [-4.48263832e+00,  1.13830908e+00],
+       [-4.61868080e+00,  9.50257845e-01],
+       [-4.71254361e+00,  7.36444170e-01],
+       [-4.76149703e+00,  5.06685023e-01],
+       [-4.76477995e+00,  2.71077025e-01],
+       [-4.72186912e+00,  3.90669011e-02],
+       [-4.63340804e+00, -1.80418361e-01],
+       [-4.49616860e+00, -3.76413035e-01],
+       [-4.32149836e+00, -5.47801105e-01],
+       [-4.11656266e+00, -6.95863150e-01],
+       [-3.88551122e+00, -8.21532712e-01],
+       [-3.63215805e+00, -9.26308373e-01],
+       [-3.35909999e+00, -1.01054260e+00],
+       [-3.07092028e+00, -1.07503883e+00],
+       [-2.77581412e+00, -1.12150552e+00],
+       [-2.47917460e+00, -1.15293730e+00],
+       [-2.18295538e+00, -1.17225174e+00],
+       [-1.88891336e+00, -1.18187827e+00],
+       [-1.59804671e+00, -1.18380784e+00],
+       [-1.31031011e+00, -1.17956771e+00],
+       [-1.02527294e+00, -1.17035524e+00],
+       [-7.42518477e-01, -1.15701164e+00],
+       [-4.61653778e-01, -1.14024579e+00],
+       [-1.82360881e-01, -1.12061176e+00],
+       [ 9.56350748e-02, -1.09858535e+00],
+       [ 3.72592885e-01, -1.07461769e+00],
+       [ 6.41497759e-01, -1.05354467e+00],
+       [ 9.09609952e-01, -1.03626712e+00],
+       [ 1.17663085e+00, -1.02445902e+00],
+       [ 1.44221791e+00, -1.02018420e+00],
+       [ 1.70606482e+00, -1.02546064e+00],
+       [ 1.96778854e+00, -1.04275241e+00],
+       [ 2.22680099e+00, -1.07544580e+00],
+       [ 2.48377653e+00, -1.11947762e+00],
+       [ 2.73879640e+00, -1.17411218e+00],
+       [ 2.99174125e+00, -1.23921014e+00],
+       [ 3.24113400e+00, -1.31425136e+00],
+       [ 3.48919940e+00, -1.37563561e+00],
+       [ 3.73499993e+00, -1.41671665e+00],
+       [ 3.97597469e+00, -1.42837730e+00],
+       [ 4.20765790e+00, -1.40213719e+00],
+       [ 4.42281524e+00, -1.33034535e+00],
+       [ 4.61056875e+00, -1.20656648e+00],
+       [ 4.74879565e+00, -1.02121557e+00],
+       [ 4.84434714e+00, -7.98979581e-01],
+       [ 4.89637089e+00, -5.48596060e-01],
+       [ 4.90323568e+00, -2.80997099e-01],
+       [ 4.86793001e+00, -1.17814914e-02],
+       [ 4.79713758e+00,  2.46607366e-01],
+       [ 4.69598542e+00,  4.86912653e-01],
+       [ 4.56896570e+00,  7.05073712e-01],
+       [ 4.41912338e+00,  8.97792409e-01],
+       [ 4.24898530e+00,  1.06151291e+00],
+       [ 4.05933211e+00,  1.18474399e+00],
+       [ 3.86040708e+00,  1.27633820e+00],
+       [ 3.65667633e+00,  1.34473660e+00],
+       [ 3.44942397e+00,  1.39560199e+00],
+       [ 3.23819139e+00,  1.43252829e+00],
+       [ 3.02139987e+00,  1.45869374e+00]
+    ],
+    closestWaypoints: [0, 1],
+    is_offtrack: false
 };
 
 let draggingCar = false;
@@ -203,13 +296,33 @@ function dist2d(a, b) {
     return Math.hypot(a[0] - b[0], a[1] - b[1]);
 }
 
+let scale = 100; // zoom factor
+
+function worldToScreen(p) {
+    return [
+        p[0] * scale + canvas.width / 2,
+        p[1] * -scale + canvas.height / 2
+    ];
+}
+
+function screenToWorld(p) {
+    return [
+        (p.x - canvas.width / 2) / scale,
+        (p.y - canvas.height / 2) / -scale
+    ];
+}
+
 function updateClosestWaypoints() {
-    const distances = state.waypoints.map((wp, idx) => ({ idx, dist: dist2d([state.car.x, state.car.y], wp) }));
+    const distances = state.waypoints.map((wp, idx) => ({
+        idx,
+        dist: dist2d([state.car.x, state.car.y], wp)
+    }));
     distances.sort((a, b) => a.dist - b.dist);
     const first = distances[0].idx;
     const second = distances[1].idx;
     state.closestWaypoints = first < second ? [first, second] : [second, first];
 }
+
 
 // --- Model Auswahl laden ---
 function loadModels() {
@@ -247,7 +360,9 @@ function fetchReward() {
                 heading: state.car.heading,
                 speed: state.car.speed,
                 waypoints: state.waypoints,
-                closest_waypoints: state.closestWaypoints
+                closest_waypoints: state.closestWaypoints,
+                is_offtrack: state.is_offtrack,
+                track_width: 0.76
             }
         })
     })
@@ -271,8 +386,16 @@ function draw() {
 
     // Track
     ctx.beginPath();
-    ctx.moveTo(state.waypoints[0][0], state.waypoints[0][1]);
-    state.waypoints.forEach(([x, y]) => ctx.lineTo(x, y));
+    const [startX, startY] = worldToScreen(state.waypoints[0]);
+    ctx.moveTo(startX, startY);
+    state.waypoints.forEach(wp => {
+        const [x, y] = worldToScreen(wp);
+        ctx.lineTo(x, y);
+    });
+    state.perfect_line.forEach(wp => {
+        const [x, y] = worldToScreen(wp);
+        ctx.lineTo(x, y);
+    });
     ctx.closePath();
     ctx.strokeStyle = '#9ca3af';
     ctx.lineWidth = 2;
@@ -280,20 +403,36 @@ function draw() {
 
     // Waypoints
     state.waypoints.forEach((wp, idx) => {
+        const [sx, sy] = worldToScreen(wp);
         ctx.beginPath();
-        ctx.arc(wp[0], wp[1], 8, 0, 2 * Math.PI);
+        ctx.arc(sx, sy, 8, 0, 2 * Math.PI);
         ctx.fillStyle = state.closestWaypoints.includes(idx) ? '#6366f1' : '#6b7280';
         ctx.fill();
+
         ctx.fillStyle = 'white';
         ctx.font = 'bold 10px Inter';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(idx, wp[0], wp[1]);
+        ctx.fillText(idx, sx, sy);
     });
+    // state.perfect_line.forEach((wp, idx) => {
+    //     const [sx, sy] = worldToScreen(wp);
+    //     ctx.beginPath();
+    //     ctx.arc(sx, sy, 8, 0, 2 * Math.PI);
+    //     ctx.fillStyle = state.closestWaypoints.includes(idx) ? '#6366f1' : '#6b7280';
+    //     ctx.fill();
+
+    //     ctx.fillStyle = 'white';
+    //     ctx.font = 'bold 10px Inter';
+    //     ctx.textAlign = 'center';
+    //     ctx.textBaseline = 'middle';
+    //     ctx.fillText(idx, sx, sy);
+    // });
 
     // Car
     ctx.save();
-    ctx.translate(state.car.x, state.car.y);
+    const [carX, carY] = worldToScreen([state.car.x, state.car.y]);
+    ctx.translate(carX, carY);
     ctx.rotate(state.car.heading * Math.PI / 180);
     ctx.fillStyle = '#ef4444';
     ctx.fillRect(-15, -10, 30, 20);
@@ -308,9 +447,11 @@ function draw() {
     ctx.restore();
 }
 
+
 function updateUI() {
     carXValue.textContent = state.car.x;
     carYValue.textContent = state.car.y;
+    closestWaypoints.textContent = state.closestWaypoints
     headingValue.textContent = `${Math.round(state.car.heading)}°`;
     speedValue.textContent = state.car.speed.toFixed(1);
     fetchReward();
@@ -335,21 +476,28 @@ speedSlider.addEventListener('input', e => { state.car.speed = +e.target.value; 
 lookAtMouseCheckbox.addEventListener('change', e => { lookAtMouse = e.target.checked; });
 
 canvas.addEventListener('mousedown', e => {
-    const pos = screenToCanvas(e);
-    const dx = pos.x - state.car.x;
-    const dy = pos.y - state.car.y;
+    const pos = screenToCanvas(e); // screen coords
+    const [carX, carY] = worldToScreen([state.car.x, state.car.y]);
+
+    const dx = pos.x - carX;
+    const dy = pos.y - carY;
+
     if (Math.sqrt(dx*dx + dy*dy) < 20) {
         draggingCar = true;
     }
 });
+
 canvas.addEventListener('mousemove', e => {
     mousePos = screenToCanvas(e);
     if (draggingCar) {
-        state.car.x = mousePos.x;
-        state.car.y = mousePos.y;
+        // convert back into world coords
+        const [wx, wy] = screenToWorld(mousePos);
+        state.car.x = wx;
+        state.car.y = wy;
         render();
     }
 });
+
 canvas.addEventListener('mouseup', () => draggingCar = false);
 canvas.addEventListener('mouseleave', () => draggingCar = false);
 

@@ -39,16 +39,15 @@ def reward_function(params):
 
     reward = speed
 
-    x = params['x']
-    y = params['y']
-    pos = (x,y)
+    x: float = params['x']
+    y: float = params['y']
+    pos: tuple[float,float] = (x,y)
     heading = params['heading']
     waypoints = params['waypoints']
     closest_waypoints = sorted(params['closest_waypoints'])
-    next_point = waypoints[closest_waypoints[1]]
     prev_point = waypoints[closest_waypoints[0]]
-    wp_3 = waypoints[(closest_waypoints[1]+1) % len(waypoints)]
-    target_point = next_point
+    next_points = waypoints[closest_waypoints[1]:closest_waypoints[1]+5]
+    target_point = next_points[0]
 
     if dist2d(pos, prev_point) > dist2d(pos, next_point):
         target_point = wp_3
